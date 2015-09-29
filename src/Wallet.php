@@ -499,10 +499,11 @@ class Wallet implements WalletInterface {
      * @param bool      $allowZeroConf
      * @param bool      $randomizeChangeIdx randomize the location of the change (for increased privacy / anonimity)
      * @param null|int  $forceFee           set a fixed fee instead of automatically calculating the correct fee, not recommended!
+     * @param null|int  $returnFee          if fee is not set manually return the amount of fees in this variable
      * @return string the txid / transaction hash
      * @throws \Exception
      */
-    public function pay(array $outputs, $changeAddress = null, $allowZeroConf = false, $randomizeChangeIdx = true, $forceFee = null) {
+    public function pay(array $outputs, $changeAddress = null, $allowZeroConf = false, $randomizeChangeIdx = true, $forceFee = null, &$returnFee = null) {
         if ($this->locked) {
             throw new \Exception("Wallet needs to be unlocked to pay");
         }
@@ -520,7 +521,7 @@ class Wallet implements WalletInterface {
 
         $apiCheckFee = $forceFee === null;
 
-        return $this->sendTx($txBuilder, $apiCheckFee);
+        return $this->sendTx($txBuilder, $apiCheckFee, $returnFee);
     }
 
     /**
@@ -592,10 +593,11 @@ class Wallet implements WalletInterface {
      * build inputs and outputs lists for TransactionBuilder
      *
      * @param TransactionBuilder $txBuilder
+     * @param null|int  $returnFee          if fee is not set manually return the amount of fees in this variable
      * @return array
      * @throws \Exception
      */
-    public function buildTx(TransactionBuilder $txBuilder) {
+    public function buildTx(TransactionBuilder $txBuilder, &$returnFee = null) {
         $send = $txBuilder->getOutputs();
 
         $utxos = $txBuilder->getUtxos();
@@ -649,6 +651,8 @@ class Wallet implements WalletInterface {
         if ($txBuilder->getValidateFee() !== null && $txBuilder->getValidateFee() != $fee) {
             throw new \Exception("the fee suggested by the coin selection ({$txBuilder->getValidateFee()}) seems incorrect ({$fee})");
         }
+
+        $returnFee = $fee;
 
         if ($change > 0) {
             $send[] = [
@@ -741,11 +745,12 @@ class Wallet implements WalletInterface {
      *
      * @param TransactionBuilder $txBuilder
      * @param bool $apiCheckFee     let the API check if the fee is correct
+     * @param null|int  $returnFee          if fee is not set manually return the amount of fees in this variable
      * @return string
      * @throws \Exception
      */
-    public function sendTx(TransactionBuilder $txBuilder, $apiCheckFee = true) {
-        list($inputs, $outputs) = $this->buildTx($txBuilder);
+    public function sendTx(TransactionBuilder $txBuilder, $apiCheckFee = true, &$returnFee = null) {
+        list($inputs, $outputs) = $this->buildTx($txBuilder, $returnFee);
 
         return $this->_sendTx($inputs, $outputs, $apiCheckFee);
     }

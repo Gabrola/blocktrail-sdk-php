@@ -146,9 +146,10 @@ interface WalletInterface {
      * @param bool      $allowZeroConf
      * @param bool      $randomizeChangeIdx randomize the location of the change (for increased privacy / anonimity)
      * @param null|int  $forceFee           set a fixed fee instead of automatically calculating the correct fee, not recommended!
+     * @param null|int  $returnFee          if fee is not set manually return the amount of fees in this variable
      * @return string                       the txid / transaction hash
      */
-    public function pay(array $outputs, $changeAddress = null, $allowZeroConf = false, $randomizeChangeIdx = true, $forceFee = null);
+    public function pay(array $outputs, $changeAddress = null, $allowZeroConf = false, $randomizeChangeIdx = true, $forceFee = null, &$returnFee = null);
 
     /**
      * build inputs and outputs lists for TransactionBuilder
