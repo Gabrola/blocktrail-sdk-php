@@ -11,6 +11,10 @@ at https://www.blocktrail.com/api/docs/lang/php
 
 [![Build Status](https://travis-ci.org/blocktrail/blocktrail-sdk-php.svg?branch=master)](https://travis-ci.org/blocktrail/blocktrail-sdk-php)
 
+Upgrading from v1.2.x to v1.3.0
+-----------------------------
+**IMPORTANT** `v1.3.0` adds the option to choose a fee strategy and **by default chooses DYNAMIC**, please check [docs/CHANGELOG.md](docs/CHANGELOG.md) for the details!!
+
 IMPORTANT! FLOATS ARE EVIL!!
 ----------------------------
 As is best practice with financial data, The API returns all values as an integer, the Bitcoin value in Satoshi's.
@@ -33,7 +37,7 @@ A bit more about this can be found [in our documentation](https://www.blocktrail
 
 Requirements
 ------------
-The SDK requires PHP 5.4+ and the Intl, GMP, BCMath and MCrypt PHP extensions.  
+The SDK requires PHP 5.6+ and the Intl, GMP, BCMath and MCrypt PHP extensions.  
 To install these on Ubuntu use:
 ```
 sudo apt-get install php5-bcmath php5-intl php5-gmp php5-mcrypt
@@ -68,7 +72,7 @@ use Blocktrail\SDK\BlocktrailSDK;
 
 Or if put the following in your `composer.json`:
 ```
-"blocktrail/blocktrail-sdk": "1.1.*"
+"blocktrail/blocktrail-sdk": "1.2.*"
 ```
 
 

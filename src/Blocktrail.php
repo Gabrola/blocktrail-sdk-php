@@ -15,10 +15,10 @@ abstract class Blocktrail {
     const EVENT_ADDRESS_TRANSACTIONS = 'address-transactions';
     const EVENT_BLOCK = 'block';
 
-    const DUST = 546;
+    const DUST = 2730;
     const BASE_FEE = 10000;
 
-    const SDK_VERSION = "1.0.2";
+    const SDK_VERSION = "1.3.7";
     const SDK_USER_AGENT = "blocktrail-sdk-php";
     const DEFAULT_TIME_ZONE = "UTC";
 
