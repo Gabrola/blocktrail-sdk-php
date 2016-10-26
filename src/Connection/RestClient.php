@@ -76,7 +76,7 @@ class RestClient {
                     'User-Agent' => Blocktrail::SDK_USER_AGENT . '/' . Blocktrail::SDK_VERSION
                 ),
                 'exceptions' => false,
-                'connect_timeout' => 3,
+                'connect_timeout' => 10,
                 'timeout' => 300.0, // tmp until we have a good matrix of all the requests and their expect min/max time
                 'verify' => true,
                 'proxy' => '',
@@ -120,8 +120,8 @@ class RestClient {
                 'User-Agent' => Blocktrail::SDK_USER_AGENT . '/' . Blocktrail::SDK_VERSION
             ),
             'http_errors' => false,
-            'connect_timeout' => 3,
-            'timeout' => 20.0, // tmp until we have a good matrix of all the requests and their expect min/max time
+            'connect_timeout' => 10,
+            'timeout' => 300.0, // tmp until we have a good matrix of all the requests and their expect min/max time
             'verify' => true,
             'proxy' => '',
             'debug' => false,
