@@ -1382,7 +1382,7 @@ class BlocktrailSDK implements BlocktrailSDKInterface {
         ];
 
         // dynamic TTL for when we're signing really big transactions
-        $ttl = max(5.0, count($paths) * 0.25) + 4.0;
+        $ttl = max(5.0, count($paths)) * 10.0;
 
         $response = $this->client->post("wallet/{$identifier}/send", ['check_fee' => (int)!!$checkFee], $data, RestClient::AUTH_HTTP_SIG, $ttl);
         $signed = self::jsonDecode($response->body(), true);
