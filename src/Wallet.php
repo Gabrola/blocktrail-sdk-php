@@ -594,13 +594,13 @@ abstract class Wallet implements WalletInterface {
 
         list($fee, $change) = $this->determineFeeAndChange($txBuilder, $this->getOptimalFeePerKB(), $this->getLowPriorityFeePerKB());
 
-        if ($txBuilder->getValidateFee() !== null) {
+        /*if ($txBuilder->getValidateFee() !== null) {
             if (abs($txBuilder->getValidateFee() - $fee) > Wallet::BASE_FEE) {
                 throw new \Exception("the fee suggested by the coin selection ({$txBuilder->getValidateFee()}) seems incorrect ({$fee})");
             }
-        }
+        }*/
 
-        $returnFee = $fee;
+        $returnFee = $txBuilder->getValidateFee();
 
         if ($change > 0) {
             $send[] = [
@@ -677,7 +677,6 @@ abstract class Wallet implements WalletInterface {
                     // if change is not dust we need to add a change output
                     if ($change > Blocktrail::DUST) {
                         $send[$changeIdx] = ['address' => 'change', 'value' => $change];
-                        $fee = $fee2;
                     } else {
                         // if change is dust we do nothing (implicitly it's added to the fee)
                         $change = 0;
@@ -685,6 +684,8 @@ abstract class Wallet implements WalletInterface {
                 }
             }
         }
+
+        $fee = $this->determineFee($utxos, $send, $txBuilder->getFeeStrategy(), $optimalFeePerKB, $lowPriorityFeePerKB);
 
         return [$fee, $change];
     }
