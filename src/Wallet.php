@@ -434,7 +434,7 @@ abstract class Wallet implements WalletInterface {
      * @return string the txid / transaction hash
      * @throws \Exception
      */
-    public function pay(array $outputs, $changeAddress = null, $allowZeroConf = false, $randomizeChangeIdx = true, $feeStrategy = self::FEE_STRATEGY_OPTIMAL, $forceFee = null) {
+    public function pay(array $outputs, $changeAddress = null, $allowZeroConf = false, $randomizeChangeIdx = true, $feeStrategy = self::FEE_STRATEGY_OPTIMAL, $forceFee = null, &$returnFee = null) {
         if ($this->locked) {
             throw new \Exception("Wallet needs to be unlocked to pay");
         }
@@ -454,7 +454,7 @@ abstract class Wallet implements WalletInterface {
 
         $apiCheckFee = $forceFee === null;
 
-        return $this->sendTx($txBuilder, $apiCheckFee);
+        return $this->sendTx($txBuilder, $apiCheckFee, $returnFee);
     }
 
     /**
@@ -545,7 +545,7 @@ abstract class Wallet implements WalletInterface {
      * @return [TransactionInterface, SignInfo[]]
      * @throws \Exception
      */
-    public function buildTx(TransactionBuilder $txBuilder) {
+    public function buildTx(TransactionBuilder $txBuilder, &$returnFee = null) {
         $send = $txBuilder->getOutputs();
         $utxos = $txBuilder->getUtxos();
         $signInfo = [];
@@ -599,6 +599,8 @@ abstract class Wallet implements WalletInterface {
                 throw new \Exception("the fee suggested by the coin selection ({$txBuilder->getValidateFee()}) seems incorrect ({$fee})");
             }
         }
+
+        $returnFee = $fee;
 
         if ($change > 0) {
             $send[] = [
@@ -696,8 +698,8 @@ abstract class Wallet implements WalletInterface {
      * @return string
      * @throws \Exception
      */
-    public function sendTx(TransactionBuilder $txBuilder, $apiCheckFee = true) {
-        list($tx, $signInfo) = $this->buildTx($txBuilder);
+    public function sendTx(TransactionBuilder $txBuilder, $apiCheckFee = true, &$returnFee = null) {
+        list($tx, $signInfo) = $this->buildTx($txBuilder, $returnFee);
 
         return $this->_sendTx($tx, $signInfo, $apiCheckFee);
     }
