@@ -677,6 +677,7 @@ abstract class Wallet implements WalletInterface {
                     // if change is not dust we need to add a change output
                     if ($change > Blocktrail::DUST) {
                         $send[$changeIdx] = ['address' => 'change', 'value' => $change];
+                        $fee = $fee2;
                     } else {
                         // if change is dust we do nothing (implicitly it's added to the fee)
                         $change = 0;
@@ -684,8 +685,6 @@ abstract class Wallet implements WalletInterface {
                 }
             }
         }
-
-        $fee = $this->determineFee($utxos, $send, $txBuilder->getFeeStrategy(), $optimalFeePerKB, $lowPriorityFeePerKB);
 
         return [$fee, $change];
     }
