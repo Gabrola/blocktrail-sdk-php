@@ -934,7 +934,7 @@ abstract class Wallet implements WalletInterface {
         $result = $this->sdk->coinSelection($this->identifier, $outputs, $lockUTXO, $allowZeroConf, $feeStrategy, $forceFee);
 
         $this->optimalFeePerKB = $result['fees'][self::FEE_STRATEGY_OPTIMAL];
-        $this->lowPriorityFeePerKB = $result['fees'][self::FEE_STRATEGY_LOW_PRIORITY];
+        $this->lowPriorityFeePerKB = max($result['fees'][self::FEE_STRATEGY_LOW_PRIORITY], 10000);
         $this->feePerKBAge = time();
 
         return $result;
