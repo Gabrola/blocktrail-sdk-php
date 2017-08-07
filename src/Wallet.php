@@ -960,7 +960,7 @@ abstract class Wallet implements WalletInterface {
         $result = $this->sdk->feePerKB();
 
         $this->optimalFeePerKB = $result[self::FEE_STRATEGY_OPTIMAL];
-        $this->lowPriorityFeePerKB = $result[self::FEE_STRATEGY_LOW_PRIORITY];
+        $this->lowPriorityFeePerKB = max($result[self::FEE_STRATEGY_LOW_PRIORITY], 10000);
 
         $this->feePerKBAge = time();
     }
