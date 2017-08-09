@@ -13,6 +13,7 @@ use BitWasp\Bitcoin\Transaction\Factory\SignData;
 use BitWasp\Bitcoin\Transaction\Factory\Signer;
 use BitWasp\Bitcoin\Transaction\Factory\TxBuilder;
 use BitWasp\Bitcoin\Transaction\OutPoint;
+use BitWasp\Bitcoin\Transaction\SignatureHash\SigHash;
 use BitWasp\Bitcoin\Transaction\Transaction;
 use BitWasp\Bitcoin\Transaction\TransactionInterface;
 use BitWasp\Bitcoin\Transaction\TransactionOutput;
@@ -705,6 +706,31 @@ abstract class Wallet implements WalletInterface {
     }
 
     /**
+     * create and sign transction based on TransactionBuilder
+     *
+     * @param TransactionBuilder $txBuilder
+     * @param bool $apiCheckFee     let the API check if the fee is correct
+     * @return TransactionInterface
+     * @throws \Exception
+     */
+    public function signTx(TransactionBuilder $txBuilder, $isBitcoinCash = false, &$returnFee = null) {
+        list($tx, $signInfo) = $this->buildTx($txBuilder, $returnFee);
+
+        if ($this->locked) {
+            throw new \Exception("Wallet needs to be unlocked to pay");
+        }
+
+        assert(Util::all(function ($signInfo) {
+            return $signInfo instanceof SignInfo;
+        }, $signInfo), '$signInfo should be SignInfo[]');
+
+        // sign the transaction with our keys
+        $signed = $this->signTransaction($tx, $signInfo, $isBitcoinCash);
+
+        return $signed;
+    }
+
+    /**
      * !! INTERNAL METHOD, public for testing purposes !!
      * create, sign and send transction based on inputs and outputs
      *
@@ -889,7 +915,7 @@ abstract class Wallet implements WalletInterface {
      * @return TransactionInterface
      * @throws \Exception
      */
-    protected function signTransaction(Transaction $tx, array $signInfo) {
+    protected function signTransaction(Transaction $tx, array $signInfo, $isBitcoinCash = false) {
         $signer = new Signer($tx, Bitcoin::getEcAdapter());
 
         assert(Util::all(function ($signInfo) {
@@ -903,7 +929,11 @@ abstract class Wallet implements WalletInterface {
 
             $key = $this->primaryPrivateKey->buildKey($path)->key()->getPrivateKey();
 
-            $signer->sign($idx, $key, $output, (new SignData())->p2sh($redeemScript));
+            $sigHash = SigHash::ALL;
+            if($isBitcoinCash)
+                $sigHash |= 0x40;
+
+            $signer->sign($idx, $key, $output, (new SignData())->p2sh($redeemScript), $sigHash);
         }
 
         return $signer->get();
