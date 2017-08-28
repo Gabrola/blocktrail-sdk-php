@@ -2,6 +2,7 @@
 
 namespace Blocktrail\SDK\Connection;
 
+use Blocktrail\SDK\Connection\Exceptions\BannedIP;
 use GuzzleHttp\Client as Guzzle;
 use GuzzleHttp\Handler\CurlHandler;
 use GuzzleHttp\HandlerStack;
@@ -245,7 +246,7 @@ class RestClient {
             $contentMD5Mode = !is_null($body) ? 'body' : 'url';
         }
 
-        $request = new Request($method, $endpointUrl);
+        $request = new Request($method, $this->apiEndpoint . $endpointUrl);
         $uri = $request->getUri();
 
         if ($queryString) {
@@ -300,7 +301,7 @@ class RestClient {
      * @return Response
      */
     public function request($method, $endpointUrl, $queryString = null, $body = null, $auth = null, $contentMD5Mode = null, $timeout = null) {
-        $request = $this->buildRequest($method, $endpointUrl, $queryString, $body, $contentMD5Mode);
+        $request = $this->buildRequest($method, $endpointUrl, $queryString, $body, $auth, $contentMD5Mode);
         $response = $this->guzzle->send($request, ['auth' => $auth, 'timeout' => $timeout]);
 
         return $this->responseHandler($response);
@@ -325,6 +326,10 @@ class RestClient {
             if ($data && isset($data['msg'], $data['code'])) {
                 throw new EndpointSpecificError(!is_string($data['msg']) ? json_encode($data['msg']) : $data['msg'], $data['code']);
             } else {
+                if (preg_match("/^banned( IP)? \[(.+)\]\n?$/", $body, $m)) {
+                    throw new BannedIP($m[2]);
+                }
+
                 throw new UnknownEndpointSpecificError($this->verboseErrors ? $body : Blocktrail::EXCEPTION_UNKNOWN_ENDPOINT_SPECIFIC_ERROR);
             }
         } elseif ($httpResponseCode == 401) {

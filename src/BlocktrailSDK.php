@@ -56,15 +56,12 @@ class BlocktrailSDK implements BlocktrailSDKInterface {
      *                                       this will cause the $network, $testnet and $apiVersion to be ignored!
      */
     public function __construct($apiKey, $apiSecret, $network = 'BTC', $testnet = false, $apiVersion = 'v1', $apiEndpoint = null) {
+
+        list ($apiNetwork, $testnet) = Util::parseApiNetwork($network, $testnet);
+
         if (is_null($apiEndpoint)) {
-            $network = strtoupper($network);
-
-            if ($testnet) {
-                $network = "t{$network}";
-            }
-
             $apiEndpoint = getenv('BLOCKTRAIL_SDK_API_ENDPOINT') ?: "https://api.blocktrail.com";
-            $apiEndpoint = "{$apiEndpoint}/{$apiVersion}/{$network}/";
+            $apiEndpoint = "{$apiEndpoint}/{$apiVersion}/{$apiNetwork}/";
         }
 
         // normalize network and set bitcoinlib to the right magic-bytes
@@ -83,25 +80,7 @@ class BlocktrailSDK implements BlocktrailSDKInterface {
      * @throws \Exception
      */
     protected function normalizeNetwork($network, $testnet) {
-        switch (strtolower($network)) {
-            case 'btc':
-            case 'bitcoin':
-                $network = 'bitcoin';
-
-                break;
-
-            case 'tbtc':
-            case 'bitcoin-testnet':
-                $network = 'bitcoin';
-                $testnet = true;
-
-                break;
-
-            default:
-                throw new \Exception("Unknown network [{$network}]");
-        }
-
-        return [$network, $testnet];
+        return Util::normalizeNetwork($network, $testnet);
     }
 
     /**
@@ -111,7 +90,7 @@ class BlocktrailSDK implements BlocktrailSDKInterface {
      * @param $testnet
      */
     protected function setBitcoinLibMagicBytes($network, $testnet) {
-        assert($network == "bitcoin");
+        assert($network == "bitcoin" || $network == "bitcoincash");
         Bitcoin::setNetwork($testnet ? NetworkFactory::bitcoinTestnet() : NetworkFactory::bitcoin());
     }
 
@@ -314,6 +293,16 @@ class BlocktrailSDK implements BlocktrailSDKInterface {
      */
     public function transaction($txhash) {
         $response = $this->client->get("transaction/{$txhash}");
+        return self::jsonDecode($response->body(), true);
+    }
+
+    /**
+     * get a single transaction
+     * @param  string[] $txhashes list of transaction hashes (up to 20)
+     * @return array[]            array containing the response
+     */
+    public function transactions($txhashes) {
+        $response = $this->client->get("transactions/" . implode(",", $txhashes));
         return self::jsonDecode($response->body(), true);
     }
     
@@ -1591,13 +1580,15 @@ class BlocktrailSDK implements BlocktrailSDKInterface {
      * @param  integer $page        pagination: page number
      * @param  integer $limit       pagination: records per page (max 500)
      * @param  string  $sortDir     pagination: sort direction (asc|desc)
+     * @param  boolean $zeroconf    include zero confirmation transactions
      * @return array                associative array containing the response
      */
-    public function walletUTXOs($identifier, $page = 1, $limit = 20, $sortDir = 'asc') {
+    public function walletUTXOs($identifier, $page = 1, $limit = 20, $sortDir = 'asc', $zeroconf = true) {
         $queryString = [
             'page' => $page,
             'limit' => $limit,
-            'sort_dir' => $sortDir
+            'sort_dir' => $sortDir,
+            'zeroconf' => (int)!!$zeroconf,
         ];
         $response = $this->client->get("wallet/{$identifier}/utxos", $queryString, RestClient::AUTH_HTTP_SIG);
         return self::jsonDecode($response->body(), true);
@@ -1638,12 +1629,26 @@ class BlocktrailSDK implements BlocktrailSDKInterface {
      * @return mixed
      * @throws \Exception
      */
-    public function faucetWithdrawl($address, $amount = 10000) {
+    public function faucetWithdrawal($address, $amount = 10000) {
         $response = $this->client->post("faucet/withdrawl", null, [
             'address' => $address,
             'amount' => $amount,
         ], RestClient::AUTH_HTTP_SIG);
         return self::jsonDecode($response->body(), true);
+    }
+
+    /**
+     * Exists for BC. Remove at major bump.
+     *
+     * @see faucetWithdrawal
+     * @deprecated
+     * @param     $address
+     * @param int $amount       defaults to 0.0001 BTC, max 0.001 BTC
+     * @return mixed
+     * @throws \Exception
+     */
+    public function faucetWithdrawl($address, $amount = 10000) {
+        return $this->faucetWithdrawal($address, $amount);
     }
 
     /**

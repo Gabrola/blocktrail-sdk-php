@@ -706,31 +706,6 @@ abstract class Wallet implements WalletInterface {
     }
 
     /**
-     * create and sign transction based on TransactionBuilder
-     *
-     * @param TransactionBuilder $txBuilder
-     * @param bool $apiCheckFee     let the API check if the fee is correct
-     * @return TransactionInterface
-     * @throws \Exception
-     */
-    public function signTx(TransactionBuilder $txBuilder, $isBitcoinCash = false, &$returnFee = null) {
-        list($tx, $signInfo) = $this->buildTx($txBuilder, $returnFee);
-
-        if ($this->locked) {
-            throw new \Exception("Wallet needs to be unlocked to pay");
-        }
-
-        assert(Util::all(function ($signInfo) {
-            return $signInfo instanceof SignInfo;
-        }, $signInfo), '$signInfo should be SignInfo[]');
-
-        // sign the transaction with our keys
-        $signed = $this->signTransaction($tx, $signInfo, $isBitcoinCash);
-
-        return $signed;
-    }
-
-    /**
      * !! INTERNAL METHOD, public for testing purposes !!
      * create, sign and send transction based on inputs and outputs
      *
@@ -915,12 +890,18 @@ abstract class Wallet implements WalletInterface {
      * @return TransactionInterface
      * @throws \Exception
      */
-    protected function signTransaction(Transaction $tx, array $signInfo, $isBitcoinCash = false) {
+    protected function signTransaction(Transaction $tx, array $signInfo) {
         $signer = new Signer($tx, Bitcoin::getEcAdapter());
 
         assert(Util::all(function ($signInfo) {
             return $signInfo instanceof SignInfo;
         }, $signInfo), '$signInfo should be SignInfo[]');
+
+        $sigHash = SigHash::ALL;
+        if ($this->network === "bitcoincash") {
+            $sigHash |= SigHash::BITCOINCASH;
+            $signer->redeemBitcoinCash(true);
+        }
 
         foreach ($signInfo as $idx => $info) {
             $path = BIP32Path::path($info->path)->privatePath();
@@ -929,11 +910,8 @@ abstract class Wallet implements WalletInterface {
 
             $key = $this->primaryPrivateKey->buildKey($path)->key()->getPrivateKey();
 
-            $sigHash = SigHash::ALL;
-            if($isBitcoinCash)
-                $sigHash |= 0x40;
-
-            $signer->sign($idx, $key, $output, (new SignData())->p2sh($redeemScript), $sigHash);
+            $input = $signer->input($idx, $output, (new SignData())->p2sh($redeemScript));
+            $input->sign($key, $sigHash);
         }
 
         return $signer->get();
@@ -1099,12 +1077,13 @@ abstract class Wallet implements WalletInterface {
     /**
      * get all UTXOs for the wallet (paginated)
      *
-     * @param  integer $page    pagination: page number
-     * @param  integer $limit   pagination: records per page (max 500)
-     * @param  string  $sortDir pagination: sort direction (asc|desc)
-     * @return array            associative array containing the response
+     * @param  integer $page        pagination: page number
+     * @param  integer $limit       pagination: records per page (max 500)
+     * @param  string  $sortDir     pagination: sort direction (asc|desc)
+     * @param  boolean $zeroconf    include zero confirmation transactions
+     * @return array                associative array containing the response
      */
-    public function utxos($page = 1, $limit = 20, $sortDir = 'asc') {
-        return $this->sdk->walletUTXOs($this->identifier, $page, $limit, $sortDir);
+    public function utxos($page = 1, $limit = 20, $sortDir = 'asc', $zeroconf = true) {
+        return $this->sdk->walletUTXOs($this->identifier, $page, $limit, $sortDir, $zeroconf);
     }
 }

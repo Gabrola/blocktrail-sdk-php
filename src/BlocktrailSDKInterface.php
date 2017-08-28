@@ -138,6 +138,13 @@ interface BlocktrailSDKInterface {
      * @return array          associative array containing the response
      */
     public function transaction($txhash);
+
+    /**
+     * get a single transaction
+     * @param  string[] $txhashes list of transaction hashes (up to 20)
+     * @return array[]            array containing the response
+     */
+    public function transactions($txhashes);
     
     /**
      * get a paginated list of all webhooks associated with the api user
@@ -527,9 +534,10 @@ interface BlocktrailSDKInterface {
      * @param  integer $page        pagination: page number
      * @param  integer $limit       pagination: records per page (max 500)
      * @param  string  $sortDir     pagination: sort direction (asc|desc)
+     * @param  boolean $zeroconf    include zero confirmation transactions
      * @return array                associative array containing the response
      */
-    public function walletUTXOs($identifier, $page = 1, $limit = 20, $sortDir = 'asc');
+    public function walletUTXOs($identifier, $page = 1, $limit = 20, $sortDir = 'asc', $zeroconf = true);
 
     /**
      *
@@ -577,7 +585,20 @@ interface BlocktrailSDKInterface {
      * @return mixed
      * @throws \Exception
      */
+    public function faucetWithdrawal($address, $amount = 10000);
+
+    /**
+     * Exists for BC. Remove at major bump.
+     *
+     * @deprecated
+     * @see faucetWithdrawal
+     * @param     $address
+     * @param int $amount       defaults to 0.0001 BTC, max 0.001 BTC
+     * @return mixed
+     * @throws \Exception
+     */
     public function faucetWithdrawl($address, $amount = 10000);
+
     /**
      * convert a Satoshi value to a BTC value
      *
