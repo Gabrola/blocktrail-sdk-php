@@ -154,16 +154,6 @@ interface WalletInterface {
     public function buildTx(TransactionBuilder $txBuilder);
 
     /**
-     * create and sign transction based on TransactionBuilder
-     *
-     * @param TransactionBuilder $txBuilder
-     * @param bool $apiCheckFee     let the API check if the fee is correct
-     * @return TransactionInterface
-     * @throws \Exception
-     */
-    public function signTx(TransactionBuilder $txBuilder, $isBitcoinCash = false, &$returnFee = null);
-
-    /**
      * create, sign and send transction based on TransactionBuilder
      *
      * @param TransactionBuilder $txBuilder
