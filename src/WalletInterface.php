@@ -184,6 +184,11 @@ interface WalletInterface {
     public function getLowPriorityFeePerKB();
 
     /**
+     * Set low priority fee per KB manually
+     */
+    public function setLowPriorityFeePerKB($feePerKB);
+
+    /**
      * @param TransactionBuilder    $txBuilder
      * @param bool|true             $lockUTXOs
      * @param bool|false            $allowZeroConf

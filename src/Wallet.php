@@ -131,6 +131,7 @@ abstract class Wallet implements WalletInterface {
 
     protected $optimalFeePerKB;
     protected $lowPriorityFeePerKB;
+    protected $customLowPriorityFeeSet = false;
     protected $feePerKBAge;
 
     /**
@@ -601,7 +602,7 @@ abstract class Wallet implements WalletInterface {
             }
         }*/
 
-        $returnFee = $txBuilder->getValidateFee();
+        $returnFee = $fee;
 
         if ($change > 0) {
             $send[] = [
@@ -942,7 +943,8 @@ abstract class Wallet implements WalletInterface {
         $result = $this->sdk->coinSelection($this->identifier, $outputs, $lockUTXO, $allowZeroConf, $feeStrategy, $forceFee);
 
         $this->optimalFeePerKB = $result['fees'][self::FEE_STRATEGY_OPTIMAL];
-        $this->lowPriorityFeePerKB = max($result['fees'][self::FEE_STRATEGY_LOW_PRIORITY], 10000);
+        if(!$this->customLowPriorityFeeSet)
+            $this->lowPriorityFeePerKB = max($result['fees'][self::FEE_STRATEGY_LOW_PRIORITY], 10000);
         $this->feePerKBAge = time();
 
         return $result;
@@ -962,6 +964,12 @@ abstract class Wallet implements WalletInterface {
         }
 
         return $this->lowPriorityFeePerKB;
+    }
+
+    public function setLowPriorityFeePerKB($feePerKB) {
+        $this->lowPriorityFeePerKB = $feePerKB;
+        $this->customLowPriorityFeeSet = true;
+        $this->feePerKBAge = time();
     }
 
     public function updateFeePerKB() {
